@@ -1,0 +1,45 @@
+{
+  "name": "claude-guard",
+  "version": "2.0.0",
+  "description": "Community Edition: Lightweight security wrapper for Claude CLI with pattern-based permissions",
+  "main": "claude-guard.js",
+  "type": "module",
+  "bin": {
+    "claude-guard": "./claude-guard.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:simple": "echo 'Community edition - run: npm test for full test suite'"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@anthropic-ai/claude-code": ">=1.0.0"
+  },
+  "files": [
+    "claude-guard.js",
+    "README.md",
+    "LICENSE",
+    "test/",
+    "INTEGRITY.json"
+  ],
+  "engines": {
+    "node": ">=14.16"
+  },
+  "keywords": [
+    "claude",
+    "cli",
+    "security",
+    "wrapper",
+    "pattern-matching"
+  ],
+  "author": "dwillitzer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dwillitzer/claude-guard-community.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dwillitzer/claude-guard-community/issues"
+  },
+  "homepage": "https://github.com/dwillitzer/claude-guard-community#readme"
+}
