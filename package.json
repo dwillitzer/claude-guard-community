@@ -11,7 +11,6 @@
     "test": "node --test test/*.test.js",
     "test:simple": "echo 'Community edition - run: npm test for full test suite'"
   },
-  "dependencies": {},
   "peerDependencies": {
     "@anthropic-ai/claude-code": ">=1.0.0"
   },
