@@ -1,0 +1,19 @@
+{
+  "version": "2.0.4",
+  "timestamp": "2025-07-28T14:30:16.558Z",
+  "algorithm": "sha256",
+  "files": {
+    "claude-guard.js": {
+      "sha256": "46eb27cc68b6299b7e48fdbda9dcf47fe1deaee0246b70f8efeb85c2ab8e59cf",
+      "size": 12883
+    },
+    "package.json": {
+      "sha256": "417cda0627f7ef767675274e8eb88bb65f20119bd52773f8e1b9cb03161dd901",
+      "size": 1085
+    },
+    "test/basic.test.js": {
+      "sha256": "83363364308a3eae1c4f5613003e0148a89dc0a5710b5a94b77d11fd80c36cac",
+      "size": 2920
+    }
+  }
+}
