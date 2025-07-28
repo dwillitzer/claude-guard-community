@@ -1,14 +1,15 @@
 {
   "name": "claude-guard",
-  "version": "2.0.4",
-  "description": "Community Edition: Lightweight security wrapper for Claude CLI with pattern-based permissions",
+  "version": "2.1.0",
+  "description": "Community Edition: Lightweight security wrapper for Claude CLI with Claude settings integration and pattern-based permissions",
   "main": "claude-guard.js",
   "type": "module",
   "bin": {
     "claude-guard": "./claude-guard.js"
   },
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node test/run-tests.js",
+    "test:unit": "node test/unit.test.js",
     "test:simple": "echo 'Community edition - run: npm test for full test suite'"
   },
   "dependencies": {},
@@ -30,7 +31,10 @@
     "cli",
     "security",
     "wrapper",
-    "pattern-matching"
+    "pattern-matching",
+    "claude-settings",
+    "integration",
+    "ai-safety"
   ],
   "author": "dwillitzer",
   "license": "MIT",

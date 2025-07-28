@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git add *)",
+      "Bash(npm *)",
+      "Bash(ls*)",
+      "Bash(cat *)",
+      "Bash(echo *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(sudo rm -rf /*)",
+      "Bash(dd if=/dev/zero of=/dev/*)",
+      "Bash(shutdown*)",
+      "Bash(reboot*)"
+    ]
+  }
+}

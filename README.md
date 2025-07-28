@@ -72,14 +72,43 @@ claude-guard --config-init   # Create config file
 claude-guard --list-aliases  # Show all aliases
 ```
 
-### Compatible with claude-settings
-Claude Guard uses simple built-in patterns, but if you need more comprehensive configuration, check out [claude-settings](https://github.com/dwillitzer/claude-settings) which provides:
+### ⚡ NEW: Claude Settings Integration
+Claude Guard now supports Claude's native settings.json format! Use your existing `.claude/settings.json` files directly:
 
-- 900+ curated development tool patterns
-- Hierarchical configuration system (enterprise → project → user)
-- Both allow and deny lists for comprehensive coverage
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)", 
+      "Read(*)",
+      "Edit(*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(sudo rm -rf /*)"
+    ]
+  }
+}
+```
 
-Claude Guard focuses on basic safety, while claude-settings offers enterprise-grade configuration management.
+**Benefits:**
+- **Standards Compliance**: Uses Claude's official settings format
+- **Layered Security**: Claude rules + additional guard patterns  
+- **Easy Migration**: Existing `.claude/settings.json` files work immediately
+- **Backwards Compatible**: Guard-only mode preserved
+
+Enable in `~/.claude/guard/config.json`:
+```json
+{
+  "policies": {
+    "useClaudeSettings": true,
+    "claudeSettingsFirst": true
+  }
+}
+```
+
+For comprehensive configuration, check out [claude-settings](https://github.com/dwillitzer/claude-settings) which provides 900+ curated development tool patterns.
 
 ## 🛡️ Security Approach
 

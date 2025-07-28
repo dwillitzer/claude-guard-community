@@ -12,6 +12,8 @@ import crypto from 'crypto';
 const CONFIG_DIR = join(homedir(), '.claude', 'guard');
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
 const AUDIT_LOG = join(CONFIG_DIR, 'audit.log');
+const CLAUDE_SETTINGS_FILE = join(homedir(), '.claude', 'settings.json');
+const CLAUDE_PROJECT_SETTINGS = join(process.cwd(), '.claude', 'settings.json');
 
 // Integrity verification
 function verifyIntegrity() {
@@ -56,6 +58,32 @@ function verifyIntegrity() {
   }
 }
 
+// Load Claude native settings
+function loadClaudeSettings() {
+  let claudeSettings = { allow: [], deny: [] };
+  
+  // Try project settings first, then user settings
+  const settingsFiles = [CLAUDE_PROJECT_SETTINGS, CLAUDE_SETTINGS_FILE];
+  
+  for (const settingsFile of settingsFiles) {
+    try {
+      if (existsSync(settingsFile)) {
+        const settings = JSON.parse(readFileSync(settingsFile, 'utf8'));
+        if (settings.permissions) {
+          claudeSettings.allow = [...claudeSettings.allow, ...(settings.permissions.allow || [])];
+          claudeSettings.deny = [...claudeSettings.deny, ...(settings.permissions.deny || [])];
+        }
+        console.log(`📋 Loaded Claude settings from: ${settingsFile}`);
+        break; // Use first found settings file
+      }
+    } catch (error) {
+      console.warn(`⚠️  Warning: Could not load Claude settings from ${settingsFile}`);
+    }
+  }
+  
+  return claudeSettings;
+}
+
 // Ensure config directory exists
 if (!existsSync(CONFIG_DIR)) {
   mkdirSync(CONFIG_DIR, { recursive: true });
@@ -93,7 +121,9 @@ const defaultConfig = {
     ],
     maxCommandLength: 1000,
     allowShellExpansion: false,
-    requireConfirmation: ["rm -rf *", "sudo *"]
+    requireConfirmation: ["rm -rf *", "sudo *"],
+    useClaudeSettings: true,
+    claudeSettingsFirst: true
   },
   aliases: {
     "@test": "npm test",
@@ -225,6 +255,31 @@ class CommandMatcher {
     
     return false;
   }
+
+  // Check Claude settings format like 'Bash(git *)'
+  matchClaudeSettings(toolCall, patterns) {
+    if (!patterns || !Array.isArray(patterns)) return false;
+    
+    // Create tool call string in Claude format: Tool(command)
+    const toolPattern = `Bash(${toolCall})`;
+    
+    for (const pattern of patterns) {
+      // Direct match for exact patterns
+      if (pattern === toolPattern) return true;
+      
+      // Extract and match pattern
+      const { tool, pattern: actualPattern } = this.extractToolPattern(pattern);
+      
+      // If tool matches 'Bash' or is wildcard, check command pattern
+      if (!tool || tool === 'Bash') {
+        if (this.matchCommand(toolCall, actualPattern || pattern)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
 }
 
 // Load configuration
@@ -236,6 +291,12 @@ try {
   }
 } catch (error) {
   console.warn('⚠️  Warning: Could not load config file, using defaults');
+}
+
+// Load Claude native settings
+let claudeSettings = { allow: [], deny: [] };
+if (config.policies.useClaudeSettings) {
+  claudeSettings = loadClaudeSettings();
 }
 
 // Audit logging function
@@ -252,7 +313,7 @@ function audit(action, details = {}) {
 // Process arguments
 const args = process.argv.slice(2);
 if (args.length === 0) {
-  console.log('Claude Guard Community Edition v2.0.4');
+  console.log('Claude Guard Community Edition v2.1.0');
   console.log('Usage: claude-guard [options] <prompt>');
   console.log('\nOptions:');
   console.log('  --version       Show version');
@@ -266,12 +327,12 @@ if (args.length === 0) {
 
 // Handle special flags
 if (args[0] === '--version') {
-  console.log('Claude Guard Community Edition v2.0.4');
+  console.log('Claude Guard Community Edition v2.1.0');
   process.exit(0);
 }
 
 if (args[0] === '--help') {
-  console.log('Claude Guard Community Edition v2.0.4');
+  console.log('Claude Guard Community Edition v2.1.0');
   console.log('Usage: claude-guard [options] <prompt>');
   console.log('\nOptions:');
   console.log('  --version       Show version');
@@ -371,11 +432,41 @@ if (existsSync('.git') && command.match(/rm|delete|remove|clean/i)) {
 
 const matcher = new CommandMatcher();
 
-for (const blocked of config.policies.blockedCommands || []) {
-  if (matcher.matchCommand(command, blocked)) {
-    console.error(`❌ Blocked: ${blocked}`);
-    audit('command_blocked', { command, pattern: blocked });
+// Hybrid validation: Claude settings first, then guard patterns
+if (config.policies.useClaudeSettings && config.policies.claudeSettingsFirst) {
+  // Check Claude deny patterns first
+  if (matcher.matchClaudeSettings(command, claudeSettings.deny)) {
+    const matchedPattern = claudeSettings.deny.find(pattern => 
+      matcher.matchClaudeSettings(command, [pattern])
+    );
+    console.error(`❌ Blocked by Claude settings: ${matchedPattern}`);
+    audit('command_blocked', { command, pattern: matchedPattern, source: 'claude_settings' });
     process.exit(1);
+  }
+  
+  // Check if explicitly allowed by Claude settings
+  const allowedByClaude = matcher.matchClaudeSettings(command, claudeSettings.allow);
+  if (allowedByClaude) {
+    console.log(`✅ Allowed by Claude settings`);
+    audit('command_allowed', { command, source: 'claude_settings' });
+  } else {
+    // Not explicitly allowed by Claude, check guard patterns
+    for (const blocked of config.policies.blockedCommands || []) {
+      if (matcher.matchCommand(command, blocked)) {
+        console.error(`❌ Blocked by guard pattern: ${blocked}`);
+        audit('command_blocked', { command, pattern: blocked, source: 'guard_pattern' });
+        process.exit(1);
+      }
+    }
+  }
+} else {
+  // Original guard-only validation
+  for (const blocked of config.policies.blockedCommands || []) {
+    if (matcher.matchCommand(command, blocked)) {
+      console.error(`❌ Blocked: ${blocked}`);
+      audit('command_blocked', { command, pattern: blocked, source: 'guard_pattern' });
+      process.exit(1);
+    }
   }
 }
 
