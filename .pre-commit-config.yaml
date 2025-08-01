@@ -1,0 +1,21 @@
+repos:
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: npx prettier --write
+        language: node
+        files: \.(js|json|md)$
+        
+      - id: eslint
+        name: eslint
+        entry: npx eslint --fix
+        language: node
+        files: \.js$
+        
+      - id: tests
+        name: run tests
+        entry: npm test
+        language: node
+        pass_filenames: false
+        always_run: true

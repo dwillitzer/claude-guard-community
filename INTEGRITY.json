@@ -1,18 +1,21 @@
 {
-  "version": "2.1.0",
-  "timestamp": "2025-07-28T23:50:13.055Z",
+  "version": "2.1.1",
+  "timestamp": "2025-08-01T16:58:05.674Z",
   "files": {
     "claude-guard.js": {
-      "sha256": "3b4c3bb8478dae555049007a46adb42cefc23312cea11e624aa26cf8af37f17b",
-      "size": 16312
+      "sha256": "3a9cda9247010373027fd58c928a87ecef91e2bda01e0140d1e98cd71efeaa3f",
+      "size": 14089,
+      "modified": "2025-08-01T16:30:33.038Z"
     },
     "package.json": {
-      "sha256": "f739d9b799771b0c90e74b342f470b027e3f6ae87fdec6d910519c4943ddbabf",
-      "size": 1215
+      "sha256": "e9b78a450c3cf8aa9597eae8c97c4fd0da65be38dfafc59d4a4257dbf2e6b9ec",
+      "size": 1523,
+      "modified": "2025-08-01T16:30:00.164Z"
     },
     "README.md": {
-      "sha256": "6e2699cd1a203494c2d33551ad03ebc9b677b48ba7cf980ace912468d2b92253",
-      "size": 6908
+      "sha256": "dea11c418b5be766bfb8248014ddf17f98ffbc8bfee8df19bd75d01414063100",
+      "size": 6957,
+      "modified": "2025-08-01T16:30:01.484Z"
     }
   }
 }

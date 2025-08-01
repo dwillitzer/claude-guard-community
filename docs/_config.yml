@@ -1,0 +1,58 @@
+# GitHub Pages Configuration
+title: "Claude Guard Community Edition"
+description: "Lightweight security wrapper for Claude CLI with Claude settings integration and pattern-based permissions"
+url: "https://dwillitzer.github.io"
+baseurl: "/claude-guard-community"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# GitHub metadata
+repository: dwillitzer/claude-guard-community
+
+# SEO and social
+twitter:
+  username: dwillitzer
+  
+author:
+  name: dwillitzer
+  email: daniel@willitzer.com
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: ""
+      type: "docs"
+    values:
+      layout: "page"
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - README.md
+  - CHANGELOG.md

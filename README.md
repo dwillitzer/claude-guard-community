@@ -14,12 +14,14 @@ Instead of Claude running `rm -rf /` or reading your SSH keys, Claude Guard auto
 ## What this IS and ISN'T
 
 ### ✅ Good for:
+
 - **Basic safety**: Prevents `rm -rf /`, credential theft, obvious disasters
-- **Development teams**: Simple pattern-based blocking without complex setup  
+- **Development teams**: Simple pattern-based blocking without complex setup
 - **Drop-in replacement**: Use `claude-guard` exactly like `claude`
 - **Zero configuration**: Works out of the box with sensible defaults
 
 ### ❌ NOT for:
+
 - **Enterprise security**: This is not enterprise-grade protection
 - **Determined attackers**: Basic pattern matching, not AI security analysis
 - **Compliance**: No central management, audit trails, or enterprise features
@@ -30,11 +32,11 @@ Instead of Claude running `rm -rf /` or reading your SSH keys, Claude Guard auto
 
 ## Quick comparison
 
-| Tool | Approach | Best for |
-|------|----------|----------|
-| `claude` | No protection | Trusted environments |
-| `claude-guard` | Basic pattern blocking | Development teams |
-| Enterprise tools | Full security suite | Regulated industries |
+| Tool             | Approach               | Best for             |
+| ---------------- | ---------------------- | -------------------- |
+| `claude`         | No protection          | Trusted environments |
+| `claude-guard`   | Basic pattern blocking | Development teams    |
+| Enterprise tools | Full security suite    | Regulated industries |
 
 ## Installation
 
@@ -54,51 +56,49 @@ claude-guard "explain this error"
 ## Features & Configuration
 
 ### Command aliases
+
 ```bash
 claude-guard @test     # Runs "run all tests in this project"
-claude-guard @build    # Runs "build the project for production"  
+claude-guard @build    # Runs "build the project for production"
 claude-guard @deploy   # Runs "deploy to production server"
 ```
 
 ### Audit tools
+
 ```bash
 claude-guard --audit-tail        # Show last 10 commands
 claude-guard --verify-integrity  # Check for tampering
 ```
 
 ### Configuration
+
 ```bash
 claude-guard --config-init   # Create config file
 claude-guard --list-aliases  # Show all aliases
 ```
 
 ### ⚡ NEW: Claude Settings Integration
+
 Claude Guard now supports Claude's native settings.json format! Use your existing `.claude/settings.json` files directly:
 
 ```json
 {
   "permissions": {
-    "allow": [
-      "Bash(git *)",
-      "Bash(npm *)", 
-      "Read(*)",
-      "Edit(*)"
-    ],
-    "deny": [
-      "Bash(rm -rf /*)",
-      "Bash(sudo rm -rf /*)"
-    ]
+    "allow": ["Bash(git *)", "Bash(npm *)", "Read(*)", "Edit(*)"],
+    "deny": ["Bash(rm -rf /*)", "Bash(sudo rm -rf /*)"]
   }
 }
 ```
 
 **Benefits:**
+
 - **Standards Compliance**: Uses Claude's official settings format
-- **Layered Security**: Claude rules + additional guard patterns  
+- **Layered Security**: Claude rules + additional guard patterns
 - **Easy Migration**: Existing `.claude/settings.json` files work immediately
 - **Backwards Compatible**: Guard-only mode preserved
 
 Enable in `~/.claude/guard/config.json`:
+
 ```json
 {
   "policies": {
@@ -113,19 +113,22 @@ For comprehensive configuration, check out [claude-settings](https://github.com/
 ## 🛡️ Security Approach
 
 ### Default Allowed Actions
+
 - **Development tools**: npm, yarn, pip, cargo, go build
-- **Version control**: git commands, git operations  
+- **Version control**: git commands, git operations
 - **Containers**: docker run, docker build, docker-compose
 - **File operations**: reading files, listing directories
 - **Safe utilities**: curl, wget (to known safe domains)
 
-### Default Blocked Actions  
+### Default Blocked Actions
+
 - **System destruction**: `rm -rf /`, `sudo rm`, `mkfs`, `format`
 - **Credential access**: Reading `/etc/passwd`, SSH keys, environment secrets
 - **Network attacks**: Port scanning, suspicious downloads
 - **Privilege escalation**: Unauthorized sudo, system modifications
 
 ### Warning Actions
+
 - **Package installs**: npm/pip/gem installs (warns but allows)
 - **Git repository operations**: In repository root (warns about destructive commands)
 - **System tools**: Some system utilities that could be misused
@@ -133,11 +136,12 @@ For comprehensive configuration, check out [claude-settings](https://github.com/
 ## 📋 Example Usage
 
 ### Basic Commands
+
 ```bash
 # Analyze code (same as Claude CLI)
 claude-guard "explain this function"
 
-# Debug assistance  
+# Debug assistance
 claude-guard "help me fix this error: TypeError: Cannot read property"
 
 # Code generation
@@ -145,14 +149,16 @@ claude-guard "create a REST API endpoint for user authentication"
 ```
 
 ### Using Command Aliases
+
 ```bash
 claude-guard @test     # Runs "run all tests in this project"
-claude-guard @lint     # Runs "check code quality and style issues"  
+claude-guard @lint     # Runs "check code quality and style issues"
 claude-guard @build    # Runs "build the project for production"
 claude-guard @deploy   # Runs "deploy to production server"
 ```
 
 ### Security & Audit Tools
+
 ```bash
 # View recent command history
 claude-guard --audit-tail
@@ -160,7 +166,7 @@ claude-guard --audit-tail
 # Search for specific commands
 claude-guard --audit-search "npm"
 
-# Verify file integrity 
+# Verify file integrity
 claude-guard --verify-integrity
 
 # View help and options
@@ -209,7 +215,7 @@ claude-guard --verify-integrity  # Check file integrity
 ## ⚠️ Important Notes
 
 - **Not enterprise-grade**: This is a basic pattern-based security tool
-- **No central management**: Configuration is local to each machine  
+- **No central management**: Configuration is local to each machine
 - **Requires Claude CLI**: Must install `@anthropic-ai/claude-code` separately
 - **Community support**: Use GitHub issues for questions and bug reports
 
