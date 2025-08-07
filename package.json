@@ -1,6 +1,6 @@
 {
   "name": "claude-guard",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Community Edition: Lightweight security wrapper for Claude CLI with Claude settings integration and pattern-based permissions",
   "main": "claude-guard.js",
   "type": "module",

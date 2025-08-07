@@ -86,6 +86,7 @@ if (!existsSync(CONFIG_DIR)) {
 const defaultConfig = {
   version: '2.0',
   policies: {
+    yoloMode: false,
     blockedPaths: ['/etc', '/usr/bin/rm', '/usr/bin/dd'],
     allowedCommands: ['*'],
     blockedCommands: [
@@ -270,7 +271,7 @@ function audit(action, details = {}) {
 
 const args = process.argv.slice(2);
 if (args.length === 0 || (args.length === 1 && args[0] === '-p')) {
-  console.log('Claude Guard Community Edition v2.1.2');
+  console.log('Claude Guard Community Edition v2.2.0');
   console.log('Starting interactive session...\n');
 
   const claude = spawn('claude', args.length === 1 && args[0] === '-p' ? ['-p'] : [], {
@@ -290,12 +291,12 @@ if (args.length === 0 || (args.length === 1 && args[0] === '-p')) {
   });
 } else {
   if (args[0] === '--version') {
-    console.log('Claude Guard Community Edition v2.1.2');
+    console.log('Claude Guard Community Edition v2.2.0');
     process.exit(0);
   }
 
   if (args[0] === '--help') {
-    console.log('Claude Guard Community Edition v2.1.2');
+    console.log('Claude Guard Community Edition v2.2.0');
     console.log('Usage: claude-guard [options] <prompt>');
     console.log('       claude-guard                    # Start interactive session');
     console.log('\nClaude Guard Options:');
@@ -305,6 +306,11 @@ if (args.length === 0 || (args.length === 1 && args[0] === '-p')) {
     console.log('  --list-aliases  List command aliases');
     console.log('  --audit-tail    Show last 10 audit entries');
     console.log('  --audit-search  Search audit logs');
+    console.log('\nConfiguration:');
+    console.log('  Edit ~/.claude/guard/config.json to customize:');
+    console.log('  - Set "yoloMode": true for dangerous operations');
+    console.log('  - Configure security policies and blocked commands');
+    console.log('  - Customize audit logging preferences');
     console.log('\nSupported Claude CLI Parameters:');
     console.log('  -d, --debug                         Enable debug mode');
     console.log('  --verbose                           Override verbose mode setting');
@@ -399,16 +405,18 @@ if (args.length === 0 || (args.length === 1 && args[0] === '-p')) {
   const command = processedArgs.join(' ');
   audit('command_start', { command, pid: process.pid, originalCommand: args.join(' ') });
 
-  if (config.policies.maxCommandLength && command.length > config.policies.maxCommandLength) {
-    console.error(`❌ Command too long: ${command.length} characters (max: ${config.policies.maxCommandLength})`);
-    audit('command_blocked', { command, reason: 'command_too_long' });
-    process.exit(1);
-  }
+  if (!config.policies.yoloMode) {
+    if (config.policies.maxCommandLength && command.length > config.policies.maxCommandLength) {
+      console.error(`❌ Command too long: ${command.length} characters (max: ${config.policies.maxCommandLength})`);
+      audit('command_blocked', { command, reason: 'command_too_long' });
+      process.exit(1);
+    }
 
-  if (!config.policies.allowShellExpansion && command.match(/[`$(){}[\]|&;<>*?~]/)) {
-    console.error('❌ Shell expansion and special characters are disabled');
-    audit('command_blocked', { command, reason: 'shell_expansion_disabled' });
-    process.exit(1);
+    if (!config.policies.allowShellExpansion && command.match(/[`$(){}[\]|&;<>*?~]/)) {
+      console.error('❌ Shell expansion and special characters are disabled');
+      audit('command_blocked', { command, reason: 'shell_expansion_disabled' });
+      process.exit(1);
+    }
   }
 
   if (existsSync('.git') && command.match(/rm|delete|remove|clean/i)) {
@@ -418,33 +426,57 @@ if (args.length === 0 || (args.length === 1 && args[0] === '-p')) {
 
   const matcher = new CommandMatcher();
 
-  if (config.policies.useClaudeSettings && config.policies.claudeSettingsFirst) {
-    if (matcher.matchClaudeSettings(command, claudeSettings.deny)) {
-      const matchedPattern = claudeSettings.deny.find((pattern) => matcher.matchClaudeSettings(command, [pattern]));
-      console.error(`❌ Blocked by Claude settings: ${matchedPattern}`);
-      audit('command_blocked', { command, pattern: matchedPattern, source: 'claude_settings' });
-      process.exit(1);
-    }
-
-    const allowedByClaude = matcher.matchClaudeSettings(command, claudeSettings.allow);
-    if (allowedByClaude) {
-      console.log('✅ Allowed by Claude settings');
-      audit('command_allowed', { command, source: 'claude_settings' });
-    } else {
-      for (const blocked of config.policies.blockedCommands || []) {
-        if (matcher.matchCommand(command, blocked)) {
-          console.error(`❌ Blocked by guard pattern: ${blocked}`);
-          audit('command_blocked', { command, pattern: blocked, source: 'guard_pattern' });
-          process.exit(1);
-        }
+  // YOLO mode uses relaxed policies but still blocks truly dangerous commands
+  if (config.policies.yoloMode) {
+    console.log('🚀 YOLO mode active - relaxed security policies');
+    audit('yolo_mode_active', { command });
+    
+    // Even in YOLO mode, block the most dangerous commands
+    const criticalBlocks = [
+      'rm -rf /',
+      'rm -rf /*', 
+      'dd if=/dev/zero of=/dev/*',
+      'sudo rm -rf /',
+      ':(){ :|:& };:',
+      'sudo dd if=/dev/zero of=/dev/sda*'
+    ];
+    
+    for (const blocked of criticalBlocks) {
+      if (matcher.matchCommand(command, blocked)) {
+        console.error(`❌ Blocked even in YOLO mode: ${blocked}`);
+        audit('command_blocked', { command, pattern: blocked, source: 'yolo_critical_block' });
+        process.exit(1);
       }
     }
   } else {
-    for (const blocked of config.policies.blockedCommands || []) {
-      if (matcher.matchCommand(command, blocked)) {
-        console.error(`❌ Blocked: ${blocked}`);
-        audit('command_blocked', { command, pattern: blocked, source: 'guard_pattern' });
+    if (config.policies.useClaudeSettings && config.policies.claudeSettingsFirst) {
+      if (matcher.matchClaudeSettings(command, claudeSettings.deny)) {
+        const matchedPattern = claudeSettings.deny.find((pattern) => matcher.matchClaudeSettings(command, [pattern]));
+        console.error(`❌ Blocked by Claude settings: ${matchedPattern}`);
+        audit('command_blocked', { command, pattern: matchedPattern, source: 'claude_settings' });
         process.exit(1);
+      }
+
+      const allowedByClaude = matcher.matchClaudeSettings(command, claudeSettings.allow);
+      if (allowedByClaude) {
+        console.log('✅ Allowed by Claude settings');
+        audit('command_allowed', { command, source: 'claude_settings' });
+      } else {
+        for (const blocked of config.policies.blockedCommands || []) {
+          if (matcher.matchCommand(command, blocked)) {
+            console.error(`❌ Blocked by guard pattern: ${blocked}`);
+            audit('command_blocked', { command, pattern: blocked, source: 'guard_pattern' });
+            process.exit(1);
+          }
+        }
+      }
+    } else {
+      for (const blocked of config.policies.blockedCommands || []) {
+        if (matcher.matchCommand(command, blocked)) {
+          console.error(`❌ Blocked: ${blocked}`);
+          audit('command_blocked', { command, pattern: blocked, source: 'guard_pattern' });
+          process.exit(1);
+        }
       }
     }
   }
