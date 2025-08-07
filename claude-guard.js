@@ -270,7 +270,7 @@ function audit(action, details = {}) {
 
 const args = process.argv.slice(2);
 if (args.length === 0 || (args.length === 1 && args[0] === '-p')) {
-  console.log('Claude Guard Community Edition v2.1.1');
+  console.log('Claude Guard Community Edition v2.1.2');
   console.log('Starting interactive session...\n');
 
   const claude = spawn('claude', args.length === 1 && args[0] === '-p' ? ['-p'] : [], {
@@ -290,21 +290,50 @@ if (args.length === 0 || (args.length === 1 && args[0] === '-p')) {
   });
 } else {
   if (args[0] === '--version') {
-    console.log('Claude Guard Community Edition v2.1.1');
+    console.log('Claude Guard Community Edition v2.1.2');
     process.exit(0);
   }
 
   if (args[0] === '--help') {
-    console.log('Claude Guard Community Edition v2.1.1');
+    console.log('Claude Guard Community Edition v2.1.2');
     console.log('Usage: claude-guard [options] <prompt>');
     console.log('       claude-guard                    # Start interactive session');
-    console.log('\nOptions:');
+    console.log('\nClaude Guard Options:');
     console.log('  --version       Show version');
     console.log('  --help          Show help');
     console.log('  --config        Show configuration');
     console.log('  --list-aliases  List command aliases');
     console.log('  --audit-tail    Show last 10 audit entries');
     console.log('  --audit-search  Search audit logs');
+    console.log('\nSupported Claude CLI Parameters:');
+    console.log('  -d, --debug                         Enable debug mode');
+    console.log('  --verbose                           Override verbose mode setting');
+    console.log('  -p, --print                         Print response and exit');
+    console.log('  --output-format <format>            Output format: text, json, stream-json');
+    console.log('  --input-format <format>             Input format: text, stream-json');
+    console.log('  --model <model>                     Model for current session');
+    console.log('  --fallback-model <model>            Auto fallback when overloaded (with --print)');
+    console.log('  --settings <file-or-json>           Load settings from file or JSON string');
+    console.log('  --permission-mode <mode>            Permission mode: acceptEdits, bypassPermissions, etc.');
+    console.log('  -c, --continue                      Continue most recent conversation');
+    console.log('  -r, --resume [sessionId]            Resume conversation');
+    console.log('  --session-id <uuid>                 Use specific session ID');
+    console.log('  --add-dir <directories>             Additional directories for tool access');
+    console.log('  --allowedTools <tools>              Allow specific tools');
+    console.log('  --disallowedTools <tools>           Deny specific tools');
+    console.log('  --mcp-config <file-or-json>         Load MCP servers configuration');
+    console.log('  --strict-mcp-config                 Only use MCP servers from --mcp-config');
+    console.log('  --append-system-prompt <prompt>     Append to system prompt');
+    console.log('  --ide                               Auto-connect to IDE if available');
+    console.log('  --dangerously-skip-permissions      Bypass all permission checks');
+    console.log('\nSupported Claude CLI Subcommands:');
+    console.log('  config                              Manage configuration');
+    console.log('  mcp                                 Configure MCP servers');
+    console.log('  migrate-installer                   Migrate from global npm installation');
+    console.log('  setup-token                         Set up authentication token');
+    console.log('  doctor                              Check Claude Code health');
+    console.log('  update                              Check for updates');
+    console.log('  install [target]                    Install Claude Code');
     process.exit(0);
   }
 
@@ -427,7 +456,36 @@ if (args.length === 0 || (args.length === 1 && args[0] === '-p')) {
     }
   }
 
-  let claudeArgs = processedArgs;
+  // Valid Claude CLI parameters (current as of 2025-08-01)
+  const validClaudeParams = new Set([
+    '--debug', '-d', '--verbose', '--print', '-p', '--output-format', '--input-format',
+    '--mcp-debug', '--dangerously-skip-permissions', '--allowedTools', '--disallowedTools',
+    '--mcp-config', '--append-system-prompt', '--permission-mode', '--continue', '-c',
+    '--resume', '-r', '--model', '--fallback-model', '--settings', '--add-dir',
+    '--ide', '--strict-mcp-config', '--session-id', '--version', '-v', '--help', '-h'
+  ]);
+
+  const claudeSubcommands = new Set([
+    'config', 'mcp', 'migrate-installer', 'setup-token', 'doctor', 'update', 'install'
+  ]);
+
+  const isSubcommand = processedArgs.length > 0 && claudeSubcommands.has(processedArgs[0]);
+
+  let claudeArgs = processedArgs.filter((arg, index, arr) => {
+    // Always pass through subcommands and their arguments
+    if (isSubcommand) return true;
+    
+    // Pass through valid Claude CLI parameters
+    if (validClaudeParams.has(arg)) return true;
+    
+    // Pass through parameter values (arguments after flags)
+    if (index > 0 && validClaudeParams.has(arr[index - 1])) return true;
+    
+    // Pass through non-flag arguments (prompts, etc.)
+    if (!arg.startsWith('-')) return true;
+    
+    return false;
+  });
 
   const claude = spawn('claude', claudeArgs, {
     stdio: 'inherit',
